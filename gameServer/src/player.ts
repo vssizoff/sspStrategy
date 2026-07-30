@@ -65,9 +65,10 @@ export default class Player {
         const promise = awaitAnswer(this.ws);
         this.ws.send(JSON.stringify({
             emit: "turn",
-            turn: state.turnNumber,
+            turnNumber: state.turnNumber,
             you: this.toObject(),
-            enemy: state.players[(this.id + 1) % 2]?.toObject()
+            enemy: state.players[(this.id + 1) % 2]?.toObject(),
+            events: state.events.map(event => ({name: event.name, target: event.target}))
         }));
         try {
             const rawActions = actionsParser(await promise);
@@ -87,7 +88,7 @@ export default class Player {
             }
             let requiredMana = 0;
             actions.forEach(action => {requiredMana += action.template?.mana ?? 0});
-            if (requiredMana < this.mana) {
+            if (requiredMana > this.mana) {
                 throw new ActionsError(`Player ${this.id}: you do not have enought mana`);
             }
             const wrongTypeActions = actions.filter(action => action.type === "action" && action.template?.type !== "noTarget"
@@ -123,5 +124,9 @@ export default class Player {
             mana: this.mana,
             units: this.units.map(unit => unit.toObject())
         }
+    }
+
+    alive() {
+        return (this.units[0]?.health ?? 0) > 0 || (this.units[1]?.health ?? 0) > 0;
     }
 }

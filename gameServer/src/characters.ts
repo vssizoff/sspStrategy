@@ -3,8 +3,9 @@ import path from "node:path";
 import State from "./state"
 
 export interface Event {
-    name: string
-    emit(type: string, unit?: number): void | Event["emit"] | Event
+    name: string;
+    target?: number;
+    emit(type: string, unit?: number): void | Event["emit"] | Event;
 }
 
 export interface Action {
@@ -21,10 +22,10 @@ export interface Character {
     };
 }
 
-export const characters: Array<Character> = [];
+export let characters: Array<Character> = [];
 
 export async function loadCharacters() {
-    return Promise.all((await fs.promises.readdir(path.resolve("./characters"))).map(async file => {
+    characters = await Promise.all((await fs.promises.readdir(path.resolve("./characters"))).map(async file => {
         return (await import(path.join(path.resolve("./characters"), file))).default as Character;
     }));
 }

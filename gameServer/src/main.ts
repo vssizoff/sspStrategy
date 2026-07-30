@@ -11,9 +11,13 @@ let gameStarted = false;
 async function start() {
     if (players.length < PLAYERS_COUNT || gameStarted) return;
     gameStarted = true;
+    console.log("Game started");
     await Promise.all(players.map(player => player.awaitReady()));
     const state = new State(players.toSorted((a, b) => a.id - b.id));
-
+    while (state.checkVictory() === -1 && state.turnNumber < 500) {
+        await state.turn();
+    }
+    process.exit(0);
 }
 
 const httpServer = createServer();

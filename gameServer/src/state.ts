@@ -33,4 +33,8 @@ export default class State {
             await player.turn(this, 5);
         }
     }
+
+    checkVictory() {
+        return !this.players[0]?.alive() ? 1 : !this.players[1]?.alive() ? 0 : -1;
+    }
 }
