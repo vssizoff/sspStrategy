@@ -9,13 +9,13 @@
 #include "easywsclient.hpp"
 #include "nlohmann/json.hpp"
 
-Strategy::Event::Event(const nlohmann::json& json): json(json), name(json["name"].get<std::string>()) {}
+Strategy::Effect::Effect(const nlohmann::json& json): json(json), name(json["name"].get<std::string>()) {}
 
-bool Strategy::Event::hasTarget() {
+bool Strategy::Effect::hasTarget() {
     return json.contains("target");
 }
 
-std::pair<int, int> Strategy::Event::getTarget() {
+std::pair<int, int> Strategy::Effect::getTarget() {
     int globalId = json["target"].get<int>();
     if (globalId > 1) return {1, globalId - 2};
     return {0, globalId};
@@ -30,8 +30,8 @@ Strategy::Player::Player(const nlohmann::json& json): id(json["id"].get<int>()),
 }
 
 Strategy::State::State(const nlohmann::json& json): turnNumber(json["turnNumber"].get<int>()), me(json["you"]), enemy(json["enemy"]) {
-    for (const auto& rawEvent : json["events"].get<std::vector<nlohmann::json>>()) {
-        events.push_back(Event(rawEvent));
+    for (const auto& rawEffect : json["effects"].get<std::vector<nlohmann::json>>()) {
+        effects.push_back(Effect(rawEffect));
     }
 }
 

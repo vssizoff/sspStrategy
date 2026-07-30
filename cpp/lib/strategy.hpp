@@ -5,13 +5,13 @@
 #include <string>
 
 namespace Strategy {
-    class Event {
+    class Effect {
         nlohmann::json json;
 
     public:
         std::string name;
 
-        explicit Event(const nlohmann::json& json);
+        explicit Effect(const nlohmann::json& json);
 
         bool hasTarget();
         std::pair<int, int> getTarget();
@@ -34,7 +34,7 @@ namespace Strategy {
     struct State {
         int turnNumber;
         Player me, enemy;
-        std::vector<Event> events;
+        std::vector<Effect> effects;
         
         explicit State(const nlohmann::json& json);
     };

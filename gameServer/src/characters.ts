@@ -2,10 +2,10 @@ import fs from "node:fs";
 import path from "node:path";
 import State from "./state"
 
-export interface Event {
+export interface Effect {
     name: string;
     target?: number;
-    emit(type: string, unit?: number): void | Event["emit"] | Event;
+    emit(type: string, unit?: number): void | Effect["emit"] | Effect;
 }
 
 export interface Action {

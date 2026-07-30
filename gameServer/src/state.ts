@@ -1,12 +1,12 @@
 import { inspect } from "node:util";
-import type { Event } from "./characters";
+import type { Effect } from "./characters";
 import Player from "./player";
 import Unit from "./unit"
 
 export default class State {
     turnNumber = -1
     units: Array<Unit> = [];
-    events: Array<Event> = [];
+    effects: Array<Effect> = [];
 
     constructor(public players: Array<Player>) {
         this.units = players.flatMap(player => player.units);
@@ -17,13 +17,13 @@ export default class State {
     }
 
     effectsEmit(type: string, player?: number, unit?: number) {
-        this.events = this.events.map(event => {
-            const newEvent = event.emit(type, unit ? player === 0 ? unit : unit + 2 : undefined);
-            if (newEvent) {
-                if (typeof newEvent === "function") return {name: event.name, emit: newEvent};
-                return newEvent;
+        this.effects = this.effects.map(effect => {
+            const newEffect = effect.emit(type, unit ? player === 0 ? unit : unit + 2 : undefined);
+            if (newEffect) {
+                if (typeof newEffect === "function") return {name: effect.name, emit: newEffect};
+                return newEffect;
             }
-            return event;
+            return effect;
         });
     }
 
@@ -36,7 +36,7 @@ export default class State {
         console.log(inspect({
             turnNumber: this.turnNumber,
             players: this.players.map(pl => pl.toObject()),
-            events: this.events
+            effects: this.effects
         }, true, 1000, true));
     }
 
