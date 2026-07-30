@@ -1,3 +1,4 @@
+import { inspect } from "node:util";
 import type { Event } from "./characters";
 import Player from "./player";
 import Unit from "./unit"
@@ -32,6 +33,11 @@ export default class State {
         for (let player of this.players) {
             await player.turn(this, 5);
         }
+        console.log(inspect({
+            turnNumber: this.turnNumber,
+            players: this.players.map(pl => pl.toObject()),
+            events: this.events
+        }, true, 1000, true));
     }
 
     checkVictory() {
