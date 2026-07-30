@@ -1,0 +1,17 @@
+{
+  "name": "gameserver",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/ws": "^8.18.1"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "parsium": "^0.1.7",
+    "ws": "^8.21.1"
+  }
+}
