@@ -21,7 +21,7 @@ async function start() {
     process.exit(0);
 }
 
-const httpServer = createServer((req, res) => {
+const httpServer = createServer(async (req, res) => {
     if (req.url?.startsWith("/state/")) {
         const id = parseInt(req.url.slice(7));
         if (isNaN(id) || id < 0 || id > 1 || !state) {
@@ -29,8 +29,8 @@ const httpServer = createServer((req, res) => {
             res.end();
             return;
         }
-        if (req.method === "POST"){
-            players[id]?.onAction(req, state);
+        if (req.method === "POST") {
+            await players[id]?.onAction(req, state);
         }
         res.write(JSON.stringify(players[id]?.getStateObject(state)));
     }

@@ -1,4 +1,4 @@
-import { alternatives, array, int, object, oneOf, optional, string } from "parsium";
+import { alternatives, array, int, object, oneOf, optional, ParsingError, string } from "parsium";
 import { WebSocket, type RawData } from "ws";
 import { characters, type Character } from "./characters";
 import Unit from "./unit";
@@ -89,16 +89,19 @@ export default class Player {
     async onAction(stream: Readable, state: State) {
         try {
             const rawAction = await actionParser.stream(stream);
+            if (state.isEnemy(this.id, rawAction.unit)) {
+                throw new ActionsError(`Player ${this.id}: you cannot do action by enemy unit ${rawAction.unit}`);
+            }
             if (rawAction.type === "move") {
                 if (this.usedMoves > 0) {
                     throw new ActionsError(`Player ${this.id}: you cannot move more than once per turn`);
                 }
-                this.units[rawAction.unit]?.move();
+                state.units[rawAction.unit]?.move();
             }
             else {
-                const action = {...rawAction, template: this.units[rawAction.unit]?.character.actions[rawAction.action]};
+                const action = {...rawAction, template: state.units[rawAction.unit]?.character.actions[rawAction.action]};
                 if (action.template === undefined) {
-                    throw new ActionsError(`Player ${this.id}: unknown action: ${action.action} (unit ${action.unit} character ${this.units[action.unit]?.character.name})`);
+                    throw new ActionsError(`Player ${this.id}: unknown action: ${action.action} (unit ${action.unit} character ${state.units[action.unit]?.character.name})`);
                 }
                 if (action.template.mana > this.mana) {
                     throw new ActionsError(`Player ${this.id}: you do not have enought mana`);
@@ -110,13 +113,13 @@ export default class Player {
                         || (action.template.type === "friendTarget" && state.isEnemy(this.id, action.unit))
                     )
                 ) {
-                    throw new ActionsError(`Player ${this.id}: action with wrong target: ${action.action} (unit ${action.unit} character ${this.units[action.unit]?.character.name}) type ${action.template?.type}. Target: ${action.target}`);
+                    throw new ActionsError(`Player ${this.id}: action with wrong target: ${action.action} (unit ${action.unit} character ${state.units[action.unit]?.character.name}) type ${action.template?.type}. Target: ${action.target}`);
                 }
                 action.template.apply(state, action.unit, action.target);
             }
         }
         catch (e) {
-            if (!(e instanceof ActionsError)) throw e;
+            if (!(e instanceof ActionsError) && !(e instanceof ParsingError)) throw e;
             console.log(e);
         }
     }
@@ -125,7 +128,7 @@ export default class Player {
         return {
             id: this.id,
             mana: this.mana,
-            units: this.units.map(unit => unit.toObject())
+            units: this.units.map((unit, i) => unit.toObject(this.id === 1 ? i + 2 : i))
         }
     }
 

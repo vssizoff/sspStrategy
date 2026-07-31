@@ -25,8 +25,9 @@ export default class Unit {
         this.health = Math.max(this.character.health, this.health + x);
     }
 
-    toObject() {
+    toObject(id: number) {
         return {
+            id,
             health: this.health,
             frontLine: this.frontLine
         }

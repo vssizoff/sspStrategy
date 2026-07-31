@@ -4,7 +4,6 @@
 #include <iostream>
 #include <functional>
 #include <string>
-#include <utility>
 #include <vector>
 #include "easywsclient.hpp"
 #include "nlohmann/json.hpp"
@@ -16,13 +15,11 @@ bool Strategy::Effect::hasTarget() {
     return json.contains("target");
 }
 
-std::pair<int, int> Strategy::Effect::getTarget() {
-    int globalId = json["target"].get<int>();
-    if (globalId > 1) return {1, globalId - 2};
-    return {0, globalId};
+int Strategy::Effect::getTarget() {
+    return json["target"].get<int>();
 }
 
-Strategy::Unit::Unit(const nlohmann::json& json): health(json["health"].get<int>()), frontLine(json["frontLine"].get<bool>()) {}
+Strategy::Unit::Unit(const nlohmann::json& json): id(json["id"].get<int>()), health(json["health"].get<int>()), frontLine(json["frontLine"].get<bool>()) {}
 
 Strategy::Player::Player(const nlohmann::json& json): id(json["id"].get<int>()), mana(json["mana"].get<int>()) {
     for (const auto& rawUnit : json["units"].get<std::vector<nlohmann::json>>()) {
@@ -66,7 +63,8 @@ void Strategy::State::move(int unit) {
 void Strategy::State::action(int unit, const std::string& action) {
     send({
         {"type", "action"},
-        {"unit", unit}
+        {"unit", unit},
+        {"action", action}
     });
 }
 
@@ -74,11 +72,12 @@ void Strategy::State::action(int unit, const std::string& action, int target) {
     send({
         {"type", "action"},
         {"unit", unit},
+        {"action", action},
         {"target", target}
     });
 }
 
-void Strategy::start(char* url, const std::string& character1, const std::string& character2, std::function<void(const State& state)> onTurn) {
+void Strategy::start(char* url, const std::string& character1, const std::string& character2, std::function<void(State& state)> onTurn) {
     easywsclient::WebSocket::pointer ws = easywsclient::WebSocket::from_url(url);
     assert(ws);
     std::string host, route;
@@ -103,7 +102,7 @@ void Strategy::start(char* url, const std::string& character1, const std::string
     std::cerr << "Game ended successfully";
 }
 
-void Strategy::start(int argc, char** argv, const std::string& character1, const std::string& character2, std::function<void(const State& state)> onTurn) {
+void Strategy::start(int argc, char** argv, const std::string& character1, const std::string& character2, std::function<void(State& state)> onTurn) {
     if (argc < 2) {
         std::cerr << "You must specify url to connect to";
         std::exit(1);

@@ -17,11 +17,11 @@ namespace Strategy {
         explicit Effect(const nlohmann::json& json);
 
         bool hasTarget();
-        std::pair<int, int> getTarget();
+        int getTarget();
     };
 
     struct Unit {
-        int health;
+        int id, health;
         bool frontLine;
 
         explicit Unit(const nlohmann::json& json);
@@ -53,6 +53,6 @@ namespace Strategy {
         void action(int unit, const std::string& action, int target);
     };
 
-    void start(char* url, const std::string& character1, const std::string& character2, std::function<void(const State& state)> onTurn);
-    void start(int argc, char** argv, const std::string& character1, const std::string& character2, std::function<void(const State& state)> onTurn);
+    void start(char* url, const std::string& character1, const std::string& character2, std::function<void(State& state)> onTurn);
+    void start(int argc, char** argv, const std::string& character1, const std::string& character2, std::function<void(State& state)> onTurn);
 };
