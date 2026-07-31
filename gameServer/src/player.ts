@@ -2,7 +2,8 @@ import { alternatives, array, int, object, oneOf, optional, string } from "parsi
 import { WebSocket, type RawData } from "ws";
 import { characters, type Character } from "./characters";
 import Unit from "./unit";
-import State from "./state"
+import State from "./state";
+import {Readable} from "node:stream";
 
 const MANA_CONTAIN_LIMIT = Number(process.env.MANA_CONTAIN_LIMIT ?? "1000");
 
@@ -26,7 +27,7 @@ export function awaitAnswer(ws: WebSocket) {
     });
 }
 
-const actionsParser = array(alternatives(object({
+const actionParser = alternatives(object({
     type: oneOf(["move"] as const),
     unit: int()
 }), object({
@@ -34,13 +35,14 @@ const actionsParser = array(alternatives(object({
     unit: int(),
     action: string(),
     target: optional(int())
-})));
+}));
 
 export default class Player {
     private initPromise: Promise<void> | null;
     units: Array<Unit> = [];
     mana: number = 0;
     state: State | null = null;
+    usedMoves = 0;
 
     constructor(public id: number, public ws: WebSocket) {
         const charactersParser = array(oneOf(characters.map(({name}) => name)), {min: 2, max: 2});
@@ -52,7 +54,7 @@ export default class Player {
                 });
             });
         });
-        this.ws.send('{"emit": "init"}');
+        this.ws.send(JSON.stringify({emit: "init", host: "http://localhost:8888", route: `/state/${id}`}));
     }
 
     async awaitReady() {
@@ -60,57 +62,58 @@ export default class Player {
         await this.initPromise;
     }
 
-    async turn(state: State, addMana: number) {
-        this.mana = Math.min(this.mana, MANA_CONTAIN_LIMIT) + addMana;
-        const promise = awaitAnswer(this.ws);
-        this.ws.send(JSON.stringify({
+    getStateObject(state: State) {
+        return {
             emit: "turn",
             turnNumber: state.turnNumber,
             you: this.toObject(),
             enemy: state.players[(this.id + 1) % 2]?.toObject(),
-            events: state.events.map(event => ({name: event.name, target: event.target}))
-        }));
+            effects: state.effects.map(event => ({name: event.name, target: event.target}))
+        }
+    }
+
+    async turn(state: State, addMana: number) {
+        this.mana = Math.min(this.mana, MANA_CONTAIN_LIMIT) + addMana;
+        this.usedMoves = 0;
+        const promise = awaitAnswer(this.ws);
+        this.ws.send(JSON.stringify({emit: "turn"}));
         try {
-            const rawActions = actionsParser(await promise);
-            const moves = rawActions.filter(({type}) => type === "move");
-            if (moves.length > 1) {
-                throw new ActionsError(`Player ${this.id}: you cannot move more than once per turn`);
-            }
-            const actions = rawActions.map(action => ({
-                ...action,
-                template: action.type === "action" ? this.units[action.unit]?.character.actions[action.action] : undefined
-            }));
-            const unknownActions = actions.filter((action) => action.type === "action" && action.template === undefined);
-            if (unknownActions.length > 0) {
-                throw new ActionsError(`Player ${this.id}: unknown actions:\n` + unknownActions
-                    .map((action) => action.type === "action" ? `${action.action} (unit ${action.unit} character ${this.units[action.unit]?.character.name})` : "")
-                    .join('\n'));
-            }
-            let requiredMana = 0;
-            actions.forEach(action => {requiredMana += action.template?.mana ?? 0});
-            if (requiredMana > this.mana) {
-                throw new ActionsError(`Player ${this.id}: you do not have enought mana`);
-            }
-            const wrongTypeActions = actions.filter(action => action.type === "action" && action.template?.type !== "noTarget"
-                && (
-                    action.target === undefined
-                    || (action.template?.type === "enemyTarget" && !state.isEnemy(this.id, action.unit))
-                    || (action.template?.type === "friendTarget" && state.isEnemy(this.id, action.unit))
-                )
-            );
-            if (wrongTypeActions.length > 0) {
-                throw new ActionsError(`Player ${this.id}: actions with wrong target:\n` + wrongTypeActions
-                    .map((action) => action.type === "action" ? `${action.action} (unit ${action.unit} character ${this.units[action.unit]?.character.name}) type ${action.template?.type}. Target: ${action.target}` : "")
-                    .join('\n'));
-            }
-            actions.forEach(action => {
-                if (this.units[action.unit]?.health === 0) return;
-                if (action.type === "move") {
-                    this.units[action.unit]?.move();
-                    return;
+            await promise;
+        }
+        catch (e) {
+            if (!(e instanceof ActionsError)) throw e;
+            console.log(e);
+        }
+    }
+
+    async onAction(stream: Readable, state: State) {
+        try {
+            const rawAction = await actionParser.stream(stream);
+            if (rawAction.type === "move") {
+                if (this.usedMoves > 0) {
+                    throw new ActionsError(`Player ${this.id}: you cannot move more than once per turn`);
                 }
-                action.template?.apply(state, action.unit, action.target);
-            });
+                this.units[rawAction.unit]?.move();
+            }
+            else {
+                const action = {...rawAction, template: this.units[rawAction.unit]?.character.actions[rawAction.action]};
+                if (action.template === undefined) {
+                    throw new ActionsError(`Player ${this.id}: unknown action: ${action.action} (unit ${action.unit} character ${this.units[action.unit]?.character.name})`);
+                }
+                if (action.template.mana > this.mana) {
+                    throw new ActionsError(`Player ${this.id}: you do not have enought mana`);
+                }
+                if (action.template.type !== "noTarget"
+                    && (
+                        action.target === undefined
+                        || (action.template.type === "enemyTarget" && !state.isEnemy(this.id, action.unit))
+                        || (action.template.type === "friendTarget" && state.isEnemy(this.id, action.unit))
+                    )
+                ) {
+                    throw new ActionsError(`Player ${this.id}: action with wrong target: ${action.action} (unit ${action.unit} character ${this.units[action.unit]?.character.name}) type ${action.template?.type}. Target: ${action.target}`);
+                }
+                action.template.apply(state, action.unit, action.target);
+            }
         }
         catch (e) {
             if (!(e instanceof ActionsError)) throw e;

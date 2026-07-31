@@ -1,5 +1,8 @@
 #pragma once
+#include <cstdint>
+#include "easywsclient.hpp"
 #include "nlohmann/json.hpp"
+#include "httplib.h"
 #include <functional>
 #include <vector>
 #include <string>
@@ -31,25 +34,25 @@ namespace Strategy {
         explicit Player(const nlohmann::json& json);
     };
 
-    struct State {
+    class State {
+        httplib::Client client;
+        std::string route;
+        
+        void update(const nlohmann::json& json);
+        void send(const nlohmann::json& json);
+
+    public:
         int turnNumber;
         Player me, enemy;
         std::vector<Effect> effects;
         
-        explicit State(const nlohmann::json& json);
-    };
+        explicit State(const nlohmann::json& json, const std::string& host, const std::string& route);
 
-    class Response {
-        std::vector<nlohmann::json> actions;
-    
-    public:
         void move(int unit);
         void action(int unit, const std::string& action);
         void action(int unit, const std::string& action, int target);
-
-        nlohmann::json json();
     };
 
-    void start(char* url, const std::string& character1, const std::string& character2, std::function<void(const State& state, Response& response)> onTurn);
-    void start(int argc, char** argv, const std::string& character1, const std::string& character2, std::function<void(const State& state, Response& response)> onTurn);
+    void start(char* url, const std::string& character1, const std::string& character2, std::function<void(const State& state)> onTurn);
+    void start(int argc, char** argv, const std::string& character1, const std::string& character2, std::function<void(const State& state)> onTurn);
 };

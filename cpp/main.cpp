@@ -1,10 +1,10 @@
 #include <cstdlib>
 #include <iostream>
-#include "lib/strategy.hpp"
+#include "strategy.hpp"
 
 using std::cout, std::cerr;
 
-void onTurn(const Strategy::State& state, Strategy::Response& response) {
+void onTurn(const Strategy::State& state) {
     cerr << state.turnNumber << '\n';
 }
 
