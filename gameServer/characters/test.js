@@ -16,7 +16,7 @@ export default {
             mana: 15,
             apply(state, unit) {
                 if (state.units[unit].frontline)
-                    for (target of state.units) if (state.isEnemy(state.player, target)) {
+                    for (target of state.units) if (state.isEnemy(state.units[unit].player, target)) {
                         if (state.units[target].frontline) {
                           state.units[target].damage(4);
                         }
@@ -28,7 +28,7 @@ export default {
             type: "noTarget",
             mana: 12,
             apply(state, unit) {
-                state.units[unit].heal(5)
+                state.units[unit].heal(5);
             }
         }
 
