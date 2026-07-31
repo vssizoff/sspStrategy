@@ -5,7 +5,7 @@ export default class Unit {
     health: number;
     frontLine: boolean = false;
 
-    constructor(public character: Character, public Player: Player, private emit: (type: string) => void) {
+    constructor(public character: Character, public player: Player, private emit: (type: string) => void) {
         this.health = character.health;
     }
 
