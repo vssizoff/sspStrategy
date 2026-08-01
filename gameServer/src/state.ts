@@ -16,9 +16,9 @@ export default class State {
         return player === 0 ? unit > 1 : unit <= 1;
     }
 
-    effectsEmit(type: string, player?: number, unit?: number) {
+    effectsEmit(type: string, player: number | undefined, unit: number | undefined, ...args: Array<unknown>) {
         this.effects = this.effects.map(effect => {
-            const newEffect = effect.emit(type, unit ? player === 0 ? unit : unit + 2 : undefined);
+            const newEffect = effect.emit(type, unit ? player === 0 ? unit : unit + 2 : undefined, ...args);
             if (newEffect) {
                 if (typeof newEffect === "function") return {name: effect.name, emit: newEffect};
                 return newEffect;
@@ -29,7 +29,7 @@ export default class State {
 
     async turn() {
         this.turnNumber++;
-        this.effectsEmit("turn")
+        this.effectsEmit("turn", undefined, undefined);
         for (let player of this.players) {
             await player.turn(this, 5);
         }

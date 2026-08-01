@@ -5,7 +5,7 @@ export default class Unit {
     health: number;
     frontLine: boolean = false;
 
-    constructor(public character: Character, public player: Player, private emit: (type: string) => void) {
+    constructor(public character: Character, public player: Player, private emit: (type: string, ...args: Array<unknown>) => void) {
         this.health = character.health;
     }
 
@@ -16,12 +16,12 @@ export default class Unit {
     }
 
     damage(x: number) {
-        this.emit("damage")
+        this.emit("damage", x)
         this.health = Math.min(0, this.health - x);
     }
 
     heal(x: number) {
-        this.emit("heal");
+        this.emit("heal", x);
         this.health = Math.max(this.character.health, this.health + x);
     }
 

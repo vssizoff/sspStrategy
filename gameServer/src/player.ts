@@ -49,8 +49,8 @@ export default class Player {
         this.initPromise = awaitAnswer(ws).then(data => {
             this.initPromise = null;
             this.units = charactersParser(data.toString("utf8")).map((character, index) => {
-                return new Unit(characters.filter(({name}) => name === character)[0] as Character, this, (type) => {
-                    this.state?.effectsEmit(type, this.id, index);
+                return new Unit(characters.filter(({name}) => name === character)[0] as Character, this, (type, ...args) => {
+                    this.state?.effectsEmit(type, this.id, index, ...args);
                 });
             });
         });

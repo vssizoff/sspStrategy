@@ -5,7 +5,7 @@ import State from "./state"
 export interface Effect {
     name: string;
     target?: number;
-    emit(type: string, unit?: number): void | Effect["emit"] | Effect;
+    emit(type: string, unit: number | undefined, ...args: Array<unknown>): void | Effect["emit"] | Effect;
 }
 
 export interface Action {
