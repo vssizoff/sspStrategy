@@ -16,13 +16,13 @@ export default class Unit {
     }
 
     damage(x: number) {
-        this.emit("damage", x)
         this.health = Math.min(0, this.health - x);
+        this.emit("damage", x);
     }
 
     heal(x: number) {
-        this.emit("heal", x);
         this.health = Math.max(this.character.health, this.health + x);
+        this.emit("heal", x);
     }
 
     toObject(id: number) {
