@@ -39,3 +39,6 @@ cpp/build
 
 gameServer/node_modules
 gameServer/dist
+
+visualizer/node_modules
+visualizer/build
