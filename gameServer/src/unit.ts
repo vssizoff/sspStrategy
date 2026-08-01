@@ -16,13 +16,15 @@ export default class Unit {
     }
 
     damage(x: number) {
+        let change = Math.min(this.health, x);
         this.health = Math.min(0, this.health - x);
-        this.emit("damage", x);
+        this.emit("damage", change);
     }
 
     heal(x: number) {
+        let change = Math.min(this.character.health - this.health, x);
         this.health = Math.max(this.character.health, this.health + x);
-        this.emit("heal", x);
+        this.emit("heal", change);
     }
 
     toObject(id: number) {
@@ -31,9 +33,5 @@ export default class Unit {
             health: this.health,
             frontLine: this.frontLine
         }
-    }
-
-    effectsTurn() {
-        
     }
 }
