@@ -28,7 +28,19 @@ export default {
             type: "noTarget",
             mana: 12,
             apply(state, unit) {
-                state.units[unit].heal(5);
+                let shield_points = 5;
+                state.effects.push({
+                    name: "KnightShield",
+                    target: unit,
+                    emit(type, unit) {
+                        if (type == "damageDealt") {
+                            let dealt = 4;
+                            let prevented_damage = min(shield_points, dealt);
+                            state.units[unit].heal(prevented_damage);
+                            shield_points -= prevented_damage;
+                        }
+                    }
+                });
             }
         }
 
