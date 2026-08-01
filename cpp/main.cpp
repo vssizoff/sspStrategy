@@ -9,5 +9,5 @@ void onTurn(Strategy::State& state) {
 }
 
 int main(int argc, char** argv) {
-    Strategy::start(argc, argv, "test", "test", onTurn);
+    Strategy::start(argc, argv, "Archer", "Knight", onTurn);
 }

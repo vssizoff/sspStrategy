@@ -43,4 +43,12 @@ export default class State {
     checkVictory() {
         return !this.players[0]?.alive() ? 1 : !this.players[1]?.alive() ? 0 : -1;
     }
+
+    getObject() {
+        return {
+            turnNumber: this.turnNumber,
+            players: this.players.map(pl => pl.toObject()),
+            effects: this.effects
+        };
+    }
 }

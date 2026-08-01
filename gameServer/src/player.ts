@@ -4,8 +4,10 @@ import { characters, type Character } from "./characters";
 import Unit from "./unit";
 import State from "./state";
 import {Readable} from "node:stream";
+import { outputApi } from "./outputApi";
 
 const MANA_CONTAIN_LIMIT = Number(process.env.MANA_CONTAIN_LIMIT ?? "1000");
+const ACTION_IDLE_TIME = Number(process.env.ACTION_IDLE_TIME ?? "1000");
 
 export class ActionsError extends Error {
     override name = "ActionsError"
@@ -17,7 +19,7 @@ export function awaitAnswer(ws: WebSocket) {
         const timeout = setTimeout(() => {
             rejected = true;
             reject(new ActionsError("WebSocket response timeout"));
-        }, 1000);
+        }, ACTION_IDLE_TIME);
 
         ws.once("message", data => {
             if (rejected) return;
@@ -27,7 +29,7 @@ export function awaitAnswer(ws: WebSocket) {
     });
 }
 
-const actionParser = alternatives(object({
+export const actionParser = alternatives(object({
     type: oneOf(["move"] as const),
     unit: int()
 }), object({
@@ -47,12 +49,21 @@ export default class Player {
     constructor(public id: number, public ws: WebSocket) {
         const charactersParser = array(oneOf(characters.map(({name}) => name)), {min: 2, max: 2});
         this.initPromise = awaitAnswer(ws).then(data => {
-            this.initPromise = null;
-            this.units = charactersParser(data.toString("utf8")).map((character, index) => {
-                return new Unit(characters.filter(({name}) => name === character)[0] as Character, this, (type, ...args) => {
-                    this.state?.effectsEmit(type, this.id, index, ...args);
+            try {
+                this.initPromise = null;
+                this.units = charactersParser(data.toString("utf8")).map((character, index) => {
+                    return new Unit(characters.filter(({name}) => name === character)[0] as Character, this, (type, ...args) => {
+                      this.state?.effectsEmit(type, this.id, index, ...args);
+                    });
                 });
-            });
+            }
+            catch (e) {
+                if (!(e instanceof ParsingError)) throw e;
+                outputApi.initBadRequest(this.id, e.message);
+            }
+        }).catch(e => {
+            if (!(e instanceof ActionsError)) throw e;
+            outputApi.initIdle(this.id);
         });
         this.ws.send(JSON.stringify({emit: "init", host: "http://localhost:8888", route: `/state/${id}`}));
     }
@@ -82,7 +93,7 @@ export default class Player {
         }
         catch (e) {
             if (!(e instanceof ActionsError)) throw e;
-            console.log(e);
+            outputApi.actionIdle(this.id);
         }
     }
 
@@ -90,21 +101,22 @@ export default class Player {
         try {
             const rawAction = await actionParser.stream(stream);
             if (state.isEnemy(this.id, rawAction.unit)) {
-                throw new ActionsError(`Player ${this.id}: you cannot do action by enemy unit ${rawAction.unit}`);
+                return outputApi.actionBadRequest(this.id, `you cannot do action by enemy unit ${rawAction.unit}`);
             }
             if (rawAction.type === "move") {
                 if (this.usedMoves > 0) {
-                    throw new ActionsError(`Player ${this.id}: you cannot move more than once per turn`);
+                    return outputApi.actionBadRequest(this.id, `you cannot move more than once per turn`);
                 }
                 state.units[rawAction.unit]?.move();
+                outputApi.logAction(state, rawAction);
             }
             else {
                 const action = {...rawAction, template: state.units[rawAction.unit]?.character.actions[rawAction.action]};
                 if (action.template === undefined) {
-                    throw new ActionsError(`Player ${this.id}: unknown action: ${action.action} (unit ${action.unit} character ${state.units[action.unit]?.character.name})`);
+                    return outputApi.actionBadRequest(this.id, `unknown action: ${action.action} (unit ${action.unit} character ${state.units[action.unit]?.character.name})`);
                 }
                 if (action.template.mana > this.mana) {
-                    throw new ActionsError(`Player ${this.id}: you do not have enought mana`);
+                    return outputApi.actionBadRequest(this.id, `you do not have enought mana`);
                 }
                 if (action.template.type !== "noTarget"
                     && (
@@ -113,14 +125,15 @@ export default class Player {
                         || (action.template.type === "friendTarget" && state.isEnemy(this.id, action.unit))
                     )
                 ) {
-                    throw new ActionsError(`Player ${this.id}: action with wrong target: ${action.action} (unit ${action.unit} character ${state.units[action.unit]?.character.name}) type ${action.template?.type}. Target: ${action.target}`);
+                    return outputApi.actionBadRequest(this.id, `action with wrong target: ${action.action} (unit ${action.unit} character ${state.units[action.unit]?.character.name}) type ${action.template?.type}. Target: ${action.target}`);
                 }
                 action.template.apply(state, action.unit, action.target);
+                outputApi.logAction(state, rawAction);
             }
         }
         catch (e) {
-            if (!(e instanceof ActionsError) && !(e instanceof ParsingError)) throw e;
-            console.log(e);
+            if (!(e instanceof ParsingError)) throw e;
+            outputApi.actionBadRequest(this.id, e.message);
         }
     }
 

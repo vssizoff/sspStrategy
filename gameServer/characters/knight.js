@@ -15,7 +15,7 @@ export default {
             type: "noTarget",
             mana: 15,
             apply(state, unit) {
-                if (state.units[unit].frontLine)
+                if (state.units[unit].frontLine) {
                     for (target of state.units) if (state.isEnemy(state.units[unit].player.id, target)) {
                         if (state.units[target].frontLine) {
                           state.units[target].damage(4);

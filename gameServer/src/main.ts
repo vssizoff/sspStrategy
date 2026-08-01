@@ -3,7 +3,10 @@ import {createServer} from "node:http";
 import Player from "./player.js";
 import State from "./state.js";
 import { loadCharacters } from "./characters.js";
+import "./outputApi.js";
+import { outputApi } from "./outputApi.js";
 
+const CONNECTION_IDLE_TIME = Number(process.env.CONNECTION_IDLE_TIME ?? "10000");
 const PLAYERS_COUNT = 2;
 let players: Array<Player> = [];
 let gameStarted = false;
@@ -18,7 +21,7 @@ async function start() {
     while (state.checkVictory() === -1 && state.turnNumber < 500) {
         await state.turn();
     }
-    process.exit(0);
+    outputApi.end(state.checkVictory());
 }
 
 const httpServer = createServer(async (req, res) => {
@@ -53,6 +56,12 @@ wss.on("connection", (ws, request) => {
 });
 
 loadCharacters().then(() => {
+    setTimeout(() => {
+        if (players.length === 2) return;
+        if (players.length === 0) outputApi.connectIdle(0, 1);
+        outputApi.connectIdle(players[0]?.id === 0 ? 1 : 0);
+    }, CONNECTION_IDLE_TIME);
+
     httpServer.listen(Number(process.env.PORT ?? "8888"), process.env.HOST ?? "localhost", () => {
         console.log(`Server started on ${process.env.HOST ?? "localhost"}:${Number(process.env.PORT ?? "8888")}`)
     });

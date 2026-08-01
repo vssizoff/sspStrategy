@@ -20,20 +20,20 @@ export default {
             type: "noTarget",
             mana: 15,
             apply(state, unit) {
-              state.effects.push({
-                name: "ArcherTrap",
-                emit(type, emitUnit) {
-                  if (type == "move") {
-                    if (state.units[emitUnit].frontLine)
-                       if (state.isEnemy(state.units[unit].player.id, emitUnit)) {
-                          state.units[emitUnit].damage(2);
-                          state.units[unit].player.mana += 4;
-                          return () => {};
-                       }
+                state.effects.push({
+                    name: "ArcherTrap",
+                    emit(type, emitUnit) {
+                        if (type == "move") {
+                            if (state.units[emitUnit].frontLine) {
+                                if (state.isEnemy(state.units[unit].player.id, emitUnit)) {
+                                    state.units[emitUnit].damage(2);
+                                    state.units[unit].player.mana += 4;
+                                    return () => {};
+                               }
+                            }
+                        }
                     }
-                  }
-                });
-              }
+                })
             }
         },
         Aim: {
