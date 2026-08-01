@@ -6,7 +6,7 @@ export default {
             type: "enemyTarget",
             mana: 10,
             apply(state, unit, target) {
-                if (state.units[unit].frontline && state.units[target].frontline) {
+                if (state.units[unit].frontLine && state.units[target].frontLine) {
                     state.units[target].damage(6);
                 }
             }
@@ -15,9 +15,9 @@ export default {
             type: "noTarget",
             mana: 15,
             apply(state, unit) {
-                if (state.units[unit].frontline)
-                    for (target of state.units) if (state.isEnemy(state.units[unit].player, target)) {
-                        if (state.units[target].frontline) {
+                if (state.units[unit].frontLine)
+                    for (target of state.units) if (state.isEnemy(state.units[unit].player.id, target)) {
+                        if (state.units[target].frontLine) {
                           state.units[target].damage(4);
                         }
                     }
@@ -32,11 +32,11 @@ export default {
                 state.effects.push({
                     name: "KnightShield",
                     target: unit,
-                    emit(type, unit) {
-                        if (type == "damageDealt") {
-                            let dealt = 4;
+                    emit(type, damaged_unit, value) {
+                        if (type == "damage" && damaged_unit == unit ) {
+                            let dealt = value;
                             let prevented_damage = min(shield_points, dealt);
-                            state.units[unit].heal(prevented_damage);
+                            state.units[unit].health += prevented_damage;
                             shield_points -= prevented_damage;
                         }
                     }
