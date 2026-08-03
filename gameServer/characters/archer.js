@@ -4,7 +4,7 @@ export default {
     actions: {
         Shoot: {
             type: "enemyTarget",
-            mana: 10,
+            mana: 17,
             apply(state, unit, target) {
                 if (state.units[unit].frontLine || state.units[target].frontLine) {
                     if (state.units[unit].aimed == target) {
@@ -18,7 +18,7 @@ export default {
         },
         Trap: {
             type: "noTarget",
-            mana: 15,
+            mana: 12,
             apply(state, unit) {
                 state.effects.push({
                     name: "ArcherTrap",
@@ -27,7 +27,7 @@ export default {
                             if (state.units[emitUnit].frontLine) {
                                 if (state.isEnemy(state.units[unit].player.id, emitUnit)) {
                                     state.units[emitUnit].damage(2);
-                                    state.units[unit].player.mana += 4;
+                                    state.units[unit].player.mana += 8;
                                     return () => {};
                                }
                             }
@@ -38,7 +38,7 @@ export default {
         },
         Aim: {
             type: "enemyTarget",
-            mana: 9,
+            mana: 8,
             apply(state, unit, target) {
               state.units[unit].aimed = target;
               state.effects.push({

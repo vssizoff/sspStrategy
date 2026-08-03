@@ -4,7 +4,7 @@ export default {
     actions: {
         SwordAttack: {
             type: "enemyTarget",
-            mana: 10,
+            mana: 7,
             apply(state, unit, target) {
                 if (state.units[unit].frontLine && state.units[target].frontLine) {
                     state.units[target].damage(6);
@@ -13,7 +13,7 @@ export default {
         },
         SplashAttack: {
             type: "noTarget",
-            mana: 15,
+            mana: 14,
             apply(state, unit) {
                 if (state.units[unit].frontLine) {
                     for (target of state.units) if (state.isEnemy(state.units[unit].player.id, target)) {
@@ -26,7 +26,7 @@ export default {
         },
         Shield: {
             type: "noTarget",
-            mana: 12,
+            mana: 14,
             apply(state, unit) {
                 let shield_points = 5;
                 state.effects.push({
