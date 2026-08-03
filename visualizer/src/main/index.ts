@@ -3,6 +3,7 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import {localRun} from "./localRun";
+import {visualize} from "./visualize";
 
 function createRootWindow(): void {
   // Create the browser window.
@@ -15,7 +16,7 @@ function createRootWindow(): void {
     autoHideMenuBar: true,
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
+      preload: join(__dirname, '../preload/index.mjs'),
       sandbox: false
     }
   })
@@ -32,6 +33,11 @@ function createRootWindow(): void {
   mainWindow.webContents.ipc.handle("localRun", async () => {
     await localRun();
     mainWindow.close();
+  });
+
+  mainWindow.webContents.ipc.handle("visualize", async () => {
+    // await visualize();
+    // mainWindow.close();
   });
 
   // HMR for renderer base on electron-vite cli.

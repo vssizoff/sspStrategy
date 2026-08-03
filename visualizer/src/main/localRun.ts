@@ -2,13 +2,14 @@ import {BrowserWindow, shell} from "electron";
 import {join, resolve} from "path";
 import {is} from "@electron-toolkit/utils";
 import icon from '../../resources/icon.png?asset'
-import {spawn} from "node:child_process";
+import {ChildProcess, spawn} from "node:child_process";
+import Backendium from "backendium";
+import {array, int, object, optional, string} from "parsium";
+import {visualize} from "./visualize";
 
 export async function localRun() {
-    const proc = spawn(`bash`, ["-c", `bun ${join(resolve(".."), "gameServer", "src", "main.ts")}`], {
-        cwd: join(resolve(".."), "gameServer"),
-        stdio: "inherit"
-    });
+    let proc: ChildProcess | null = null;
+    const app = new Backendium({port: 8889});
 
     // Create the browser window.
     const mainWindow = new BrowserWindow({
@@ -18,7 +19,7 @@ export async function localRun() {
         autoHideMenuBar: true,
         ...(process.platform === 'linux' ? { icon } : {}),
         webPreferences: {
-            preload: join(__dirname, '../preload/index.js'),
+            preload: join(__dirname, '../preload/index.mjs'),
             sandbox: false
         }
     })
@@ -32,8 +33,103 @@ export async function localRun() {
         return { action: 'deny' }
     })
 
+    const gameLog: Array<unknown> = [];
+
+    mainWindow.webContents.ipc.handle("visualize", async () => {
+        await visualize(gameLog);
+    });
+
+    app.post("/connection-idle", {
+        bodyValidator: array(int())
+    }, async (request, response) => {
+        mainWindow.webContents.send("connection-idle", request.body);
+        response.end();
+    });
+
+    app.post("/init-idle/:player", {
+        paramsValidator: object({player: int()})
+    }, async (request, response) => {
+        mainWindow.webContents.send("init-idle", request.params.player);
+        response.end();
+    });
+
+    app.post("/init-bad-request/:player", {
+        paramsValidator: object({player: int()}),
+        bodyValidator: object({message: string()})
+    }, async (request, response) => {
+        mainWindow.webContents.send("bad-request", request.params.player, request.body);
+        mainWindow.webContents.send("game-ended", undefined);
+        proc?.kill();
+        response.end();
+    });
+
+    app.post("/action-idle/:player", {
+        paramsValidator: object({player: int()})
+    }, async (request, response) => {
+        gameLog.push({idle: true, correct: false, player: request.params.player});
+        mainWindow.webContents.send("action-idle", request.params.player);
+        response.end();
+    });
+
+    app.post("/action-bad-request/:player", {
+        paramsValidator: object({player: int()}),
+        bodyValidator: object({message: string()})
+    }, async (request, response) => {
+        gameLog.push({correct: false, ...request.body});
+        mainWindow.webContents.send("bad-request", request.params.player, request.body);
+        mainWindow.webContents.send("game-ended", (request.params.player + 1) % 2);
+        proc?.kill();
+        response.end();
+    });
+
+    app.post("/player-ready/:player", {
+        paramsValidator: object({player: int()})
+    }, async (request, response) => {
+        mainWindow.webContents.send("player-ready", request.params.player);
+        response.end();
+    });
+
+    app.post("/game-started", {}, async (request, response) => {
+        mainWindow.webContents.send("game-started");
+        response.end();
+    });
+
+    app.post("/action", {
+        bodyValidator: object({})
+    }, async (request, response) => {
+        gameLog.push({correct: true, ...request.body});
+        response.end();
+    });
+
+    app.post("/turn-ended/:turn", {
+        paramsValidator: object({turn: int()})
+    }, async (request, response) => {
+        mainWindow.webContents.send("turn-ended", request.params.turn);
+        response.end();
+    });
+
+    app.post("/game-ended", {
+        bodyValidator: object({winner: optional(int())})
+    }, async (request, response) => {
+        mainWindow.webContents.send("game-ended", request.body.winner);
+        proc?.kill();
+        response.end();
+    });
+
+    const server = await app.startAsync();
+
+    proc = spawn(`bash`, ["-c", `/home/sizoff/.bun/bin/bun ${join(resolve(".."), "gameServer", "src", "main.ts")}`], {
+        cwd: join(resolve(".."), "gameServer"),
+        stdio: "inherit",
+        env: {
+            CONNECTION_IDLE_TIME: "100000",
+            OUTPUT: "http://localhost:8889"
+        }
+    });
+
     mainWindow.on('closed', () => {
-        proc.kill();
+        proc?.kill();
+        server.close();
     });
 
     // HMR for renderer base on electron-vite cli.

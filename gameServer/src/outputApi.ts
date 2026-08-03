@@ -4,6 +4,7 @@ import type { actionParser } from "./player";
 import fs from "node:fs";
 import path from "node:path";
 import cryptoRandomString from 'crypto-random-string';
+import {post} from "superagent";
 
 export interface OutputApi {
     connectIdle(...players: Array<number>): void;
@@ -83,4 +84,50 @@ export class CliOutputApi implements OutputApi {
     }
 }
 
-export const outputApi: OutputApi = new CliOutputApi();
+const OUTPUT = process.env.OUTPUT;
+
+export class HttpOutputApi implements OutputApi {
+    constructor(private host: string) {}
+
+    connectIdle(...players: Array<number>): void {
+        post(this.host + "/connection-idle").send(players).ok(() => true).end();
+    }
+
+    initIdle(player: number): void {
+        post(this.host + `/init-idle/${player}`).ok(() => true).end();
+    }
+
+    initBadRequest(player: number, message: string): void {
+        post(this.host + `/init-bad-request/${player}`).send({message}).ok(() => true).end();
+    }
+
+    actionIdle(player: number): void {
+        post(this.host + `/action-idle/${player}`).ok(() => true).end();
+    }
+
+    actionBadRequest(action: unknown, player: number, message: string): void {
+        post(this.host + `/action-bad-request/${player}`).send({action, player, message}).ok(() => true).end();
+    }
+
+    playerReady(player: number): void {
+        post(this.host + `/player-ready/${player}`).ok(() => true).end();
+    }
+
+    gameStarted(): void {
+        post(this.host + `/game-started`).ok(() => true).end();
+    }
+
+    logAction(state: State, action: ReturnType<typeof actionParser>, player: number): void {
+        post(this.host + "/action").send({...action, state: state.getObject(), player}).ok(() => true).end();
+    }
+
+    turnEnded(state: State): void {
+        post(this.host + `/init-idle/${state.turnNumber}`).ok(() => true).end();
+    }
+
+    end(winner: number | undefined): void {
+        post(this.host + `/game-ended`).send({winner}).ok(() => true).end();
+    }
+}
+
+export const outputApi: OutputApi = OUTPUT ? new HttpOutputApi(OUTPUT) : new CliOutputApi();

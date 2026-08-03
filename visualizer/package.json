@@ -21,6 +21,8 @@
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",
     "@electron-toolkit/utils": "^4.0.0",
+    "backendium": "^0.0.21",
+    "parsium": "^0.1.7",
     "vue-router": "^5.2.0"
   },
   "devDependencies": {
@@ -34,5 +36,6 @@
     "vite": "^7.2.6",
     "vue": "^3.5.25",
     "vue-tsc": "^3.1.6"
-  }
+  },
+  "type": "module"
 }
