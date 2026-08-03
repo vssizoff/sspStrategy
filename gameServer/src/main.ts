@@ -59,7 +59,7 @@ wss.on("connection", (ws, request) => {
 });
 
 loadCharacters().then(() => {
-    setTimeout(() => {
+    if (CONNECTION_IDLE_TIME > 0) setTimeout(() => {
         if (players.length === 2) return;
         if (players.length === 0) outputApi.connectIdle(0, 1);
         outputApi.connectIdle(players[0]?.id === 0 ? 1 : 0);

@@ -38,7 +38,7 @@ defineProps({
 /* Графические скобки через border */
 .bracket {
   width: 5px;
-  height: calc(100% + 10px);
+  height: calc(100% + 6px);
   border: 2px solid black;
   opacity: 0.6;
   position: absolute;
@@ -70,7 +70,7 @@ defineProps({
     background: #60e17b30;
 
     .bracket {
-      height: calc(100% + 15px);
+      height: calc(100% + 10px);
     }
 
     .bracket-left {
