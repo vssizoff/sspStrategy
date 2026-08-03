@@ -1,6 +1,9 @@
 import { inspect } from "node:util";
 import State from "./state";
 import type { actionParser } from "./player";
+import fs from "node:fs";
+import path from "node:path";
+import cryptoRandomString from 'crypto-random-string';
 
 export interface OutputApi {
     connectIdle(...players: Array<number>): void;
@@ -8,14 +11,20 @@ export interface OutputApi {
     initBadRequest(player: number, message: string): void;
 
     actionIdle(player: number): void;
-    actionBadRequest(player: number, message: string): void;
+    actionBadRequest(action: unknown, player: number, message: string): void;
 
-    logAction(state: State, action: ReturnType<typeof actionParser>): void;
+    playerReady(player: number): void;
+    gameStarted(): void;
+
+    logAction(state: State, action: ReturnType<typeof actionParser>, player: number): void;
+    turnEnded(state: State): void;
 
     end(winner: number | undefined): void;
 }
 
 export class CliOutputApi implements OutputApi {
+    gameLog: Array<unknown> = [];
+
     connectIdle(...players: Array<number>): void {
         players.forEach(player => console.error(`Player ${player}: connection timed out`));
         this.end(undefined);
@@ -33,25 +42,43 @@ export class CliOutputApi implements OutputApi {
 
     actionIdle(player: number): void {
         console.error(`Player ${player}: WebSocket response timed out`);
+        this.gameLog.push({idle: true, correct: false, player});
         this.end((player + 1) % 2);
     }
 
-    actionBadRequest(player: number, message: string): void {
+    actionBadRequest(action: unknown, player: number, message: string): void {
         console.error(`Player ${player}: ${message}`);
+        this.gameLog.push({action, correct: false, player, message});
         this.end((player + 1) % 2);
     }
 
-    logAction(state: State, action: ReturnType<typeof actionParser>): void {
-        console.info("Action:", inspect(action, true, 1000, true));
+    playerReady(player: number): void {
+        console.log(`Player ${player} ready`);
+    }
+
+    gameStarted(): void {
+        console.log("Game started");
+    }
+
+    logAction(state: State, action: ReturnType<typeof actionParser>, player: number): void {
+        //console.info("Action:", inspect(action, true, 1000, true));
+        this.gameLog.push({...action, correct: true, state: state.getObject(), player});
+    }
+
+    turnEnded(state: State): void {
+        console.log(`Turn ${state.turnNumber} ended`);
     }
 
     end(winner: number | undefined): void {
+        const file = path.resolve(`game-${cryptoRandomString({length: 10})}.log`);
+        fs.writeFileSync(file, JSON.stringify(this.gameLog, undefined, 4), {encoding: "utf8"});
         if (winner === undefined) {
             console.log("Verdict: draft");
         }
         else {
             console.log(`Verdict: player ${winner} won`);
         }
+        console.log(`Game log written to ${file}`)
         process.exit(0);
     }
 }

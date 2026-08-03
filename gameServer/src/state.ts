@@ -2,6 +2,8 @@ import { inspect } from "node:util";
 import type { Effect } from "./characters";
 import Player from "./player";
 import Unit from "./unit"
+import rand from "./rand";
+import { outputApi } from "./outputApi";
 
 export default class State {
     turnNumber = -1
@@ -30,14 +32,17 @@ export default class State {
     async turn() {
         this.turnNumber++;
         this.effectsEmit("turn", undefined, undefined);
+        const addMana = rand.intBetween(2, 10);
+        this.players.forEach(pl => pl.addMana(addMana));
         for (let player of this.players) {
-            await player.turn(this, 5);
+            await player.turn(this);
         }
-        console.log(inspect({
-            turnNumber: this.turnNumber,
-            players: this.players.map(pl => pl.toObject()),
-            effects: this.effects
-        }, true, 1000, true));
+        //console.log(inspect({
+        //    turnNumber: this.turnNumber,
+        //    players: this.players.map(pl => pl.toObject()),
+        //    effects: this.effects
+        //}, true, 1000, true));
+        outputApi.turnEnded(this);
     }
 
     checkVictory() {

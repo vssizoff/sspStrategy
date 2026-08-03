@@ -7,6 +7,7 @@ import "./outputApi.js";
 import { outputApi } from "./outputApi.js";
 
 const CONNECTION_IDLE_TIME = Number(process.env.CONNECTION_IDLE_TIME ?? "10000");
+const TURNS_LIMIT = Number(process.env.TURNS_LIMIT ?? "1000");
 const PLAYERS_COUNT = 2;
 let players: Array<Player> = [];
 let gameStarted = false;
@@ -15,13 +16,14 @@ let state: State | null = null;
 async function start() {
     if (players.length < PLAYERS_COUNT || gameStarted) return;
     gameStarted = true;
-    console.log("Game started");
     await Promise.all(players.map(player => player.awaitReady()));
+    outputApi.gameStarted();
     state = new State(players.toSorted((a, b) => a.id - b.id));
-    while (state.checkVictory() === -1 && state.turnNumber < 500) {
+    while (state.checkVictory() === -1 && state.turnNumber < TURNS_LIMIT) {
         await state.turn();
     }
-    outputApi.end(state.checkVictory());
+    const winner = state.checkVictory();
+    outputApi.end(winner === -1 ? undefined : winner);
 }
 
 const httpServer = createServer(async (req, res) => {

@@ -56,6 +56,7 @@ export default class Player {
                       this.state?.effectsEmit(type, this.id, index, ...args);
                     });
                 });
+                outputApi.playerReady(id);
             }
             catch (e) {
                 if (!(e instanceof ParsingError)) throw e;
@@ -83,8 +84,11 @@ export default class Player {
         }
     }
 
-    async turn(state: State, addMana: number) {
-        this.mana = Math.min(this.mana, MANA_CONTAIN_LIMIT) + addMana;
+    addMana(x: number) {
+        this.mana = Math.min(this.mana, MANA_CONTAIN_LIMIT) + x;
+    }
+
+    async turn(state: State) {
         this.usedMoves = 0;
         const promise = awaitAnswer(this.ws);
         this.ws.send(JSON.stringify({emit: "turn"}));
@@ -101,22 +105,22 @@ export default class Player {
         try {
             const rawAction = await actionParser.stream(stream);
             if (state.isEnemy(this.id, rawAction.unit)) {
-                return outputApi.actionBadRequest(this.id, `you cannot do action by enemy unit ${rawAction.unit}`);
+                return outputApi.actionBadRequest(rawAction, this.id, `you cannot do action by enemy unit ${rawAction.unit}`);
             }
             if (rawAction.type === "move") {
                 if (this.usedMoves > 0) {
-                    return outputApi.actionBadRequest(this.id, `you cannot move more than once per turn`);
+                    return outputApi.actionBadRequest(rawAction, this.id, `you cannot move more than once per turn`);
                 }
                 state.units[rawAction.unit]?.move();
-                outputApi.logAction(state, rawAction);
+                outputApi.logAction(state, rawAction, this.id);
             }
             else {
                 const action = {...rawAction, template: state.units[rawAction.unit]?.character.actions[rawAction.action]};
                 if (action.template === undefined) {
-                    return outputApi.actionBadRequest(this.id, `unknown action: ${action.action} (unit ${action.unit} character ${state.units[action.unit]?.character.name})`);
+                    return outputApi.actionBadRequest(rawAction, this.id, `unknown action: ${action.action} (unit ${action.unit} character ${state.units[action.unit]?.character.name})`);
                 }
                 if (action.template.mana > this.mana) {
-                    return outputApi.actionBadRequest(this.id, `you do not have enought mana`);
+                    return outputApi.actionBadRequest(rawAction, this.id, `you do not have enought mana`);
                 }
                 if (action.template.type !== "noTarget"
                     && (
@@ -125,15 +129,16 @@ export default class Player {
                         || (action.template.type === "friendTarget" && state.isEnemy(this.id, action.unit))
                     )
                 ) {
-                    return outputApi.actionBadRequest(this.id, `action with wrong target: ${action.action} (unit ${action.unit} character ${state.units[action.unit]?.character.name}) type ${action.template?.type}. Target: ${action.target}`);
+                    return outputApi.actionBadRequest(rawAction, this.id, `action with wrong target: ${action.action} (unit ${action.unit} character ${state.units[action.unit]?.character.name}) type ${action.template?.type}. Target: ${action.target}`);
                 }
+                this.mana -= action.template.mana;
                 action.template.apply(state, action.unit, action.target);
-                outputApi.logAction(state, rawAction);
+                outputApi.logAction(state, rawAction, this.id);
             }
         }
         catch (e) {
             if (!(e instanceof ParsingError)) throw e;
-            outputApi.actionBadRequest(this.id, e.message);
+            outputApi.actionBadRequest(null, this.id, e.message);
         }
     }
 
