@@ -5,6 +5,7 @@ import Unit from "./unit";
 import State from "./state";
 import {Readable} from "node:stream";
 import { outputApi } from "./outputApi";
+import cryptoRandomString from 'crypto-random-string';
 
 const MANA_CONTAIN_LIMIT = Number(process.env.MANA_CONTAIN_LIMIT ?? "1000");
 const ACTION_IDLE_TIME = Number(process.env.ACTION_IDLE_TIME ?? "1000");
@@ -45,8 +46,10 @@ export default class Player {
     mana: number = 0;
     state: State | null = null;
     usedMoves = 0;
+    token: string;
 
     constructor(public id: number, public ws: WebSocket) {
+        this.token = cryptoRandomString({length: 32});
         const charactersParser = array(oneOf(characters.map(({name}) => name)), {min: 2, max: 2});
         this.initPromise = awaitAnswer(ws).then(data => {
             try {
@@ -66,7 +69,7 @@ export default class Player {
             if (!(e instanceof ActionsError)) throw e;
             outputApi.initIdle(this.id);
         });
-        this.ws.send(JSON.stringify({emit: "init", host: "http://localhost:8888", route: `/state/${id}`}));
+        this.ws.send(JSON.stringify({emit: "init", host: `http://${process.env.OUTER_HOST ?? 'localhost'}:${Number(process.env.PORT ?? "8888")}`, route: `/state/${this.token}`}));
     }
 
     async awaitReady() {
