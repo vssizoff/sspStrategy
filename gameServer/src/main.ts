@@ -49,7 +49,7 @@ const wss = new ws.WebSocketServer({
 wss.on("connection", (ws, request) => {
     if (request.url?.startsWith("/player/")) {
         const id = parseInt(request.url.slice(8));
-        if (isNaN(id) || id < 0 || id > 1) {
+        if (isNaN(id) || id < 0 || id > 1 || players.map(pl => pl.id).includes(id)) {
             ws.terminate();
             return;
         }

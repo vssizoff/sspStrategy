@@ -10,7 +10,7 @@ export default createRouter({
         },
         {
             name: "localRun",
-            path: "/",
+            path: "/local-run",
             component: () => import("@renderer/views/LocalRunView.vue"),
         }
     ]

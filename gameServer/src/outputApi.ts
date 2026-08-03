@@ -122,7 +122,7 @@ export class HttpOutputApi implements OutputApi {
     }
 
     turnEnded(state: State): void {
-        post(this.host + `/init-idle/${state.turnNumber}`).ok(() => true).end();
+        post(this.host + `/turn-ended/${state.turnNumber}`).ok(() => true).end();
     }
 
     end(winner: number | undefined): void {

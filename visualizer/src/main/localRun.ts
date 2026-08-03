@@ -21,7 +21,9 @@ export async function localRun() {
         webPreferences: {
             preload: join(__dirname, '../preload/index.mjs'),
             sandbox: false
-        }
+        },
+        resizable: false,
+        maximizable: false
     })
 
     mainWindow.on('ready-to-show', () => {
@@ -42,14 +44,16 @@ export async function localRun() {
     app.post("/connection-idle", {
         bodyValidator: array(int())
     }, async (request, response) => {
-        mainWindow.webContents.send("connection-idle", request.body);
+        mainWindow.webContents.send("message", request.body.map(player => `Player ${player}: connection timed out`).join('\n'));
+        mainWindow.webContents.send("game-ended", undefined);
         response.end();
     });
 
     app.post("/init-idle/:player", {
         paramsValidator: object({player: int()})
     }, async (request, response) => {
-        mainWindow.webContents.send("init-idle", request.params.player);
+        mainWindow.webContents.send("message", `Player ${request.params.player}: init WebSocket response timed out`);
+        mainWindow.webContents.send("game-ended", undefined);
         response.end();
     });
 
@@ -57,7 +61,7 @@ export async function localRun() {
         paramsValidator: object({player: int()}),
         bodyValidator: object({message: string()})
     }, async (request, response) => {
-        mainWindow.webContents.send("bad-request", request.params.player, request.body);
+        mainWindow.webContents.send("message", `Player ${request.params.player}: ${request.body.message}`);
         mainWindow.webContents.send("game-ended", undefined);
         proc?.kill();
         response.end();
@@ -67,7 +71,8 @@ export async function localRun() {
         paramsValidator: object({player: int()})
     }, async (request, response) => {
         gameLog.push({idle: true, correct: false, player: request.params.player});
-        mainWindow.webContents.send("action-idle", request.params.player);
+        mainWindow.webContents.send("message", `Player ${request.params.player}: WebSocket response timed out`);
+        mainWindow.webContents.send("game-ended", (request.params.player + 1) % 2);
         response.end();
     });
 
@@ -76,7 +81,7 @@ export async function localRun() {
         bodyValidator: object({message: string()})
     }, async (request, response) => {
         gameLog.push({correct: false, ...request.body});
-        mainWindow.webContents.send("bad-request", request.params.player, request.body);
+        mainWindow.webContents.send("message", `Player ${request.params.player}: ${request.body.message}`);
         mainWindow.webContents.send("game-ended", (request.params.player + 1) % 2);
         proc?.kill();
         response.end();

@@ -21,7 +21,7 @@ onMounted(() => {
 </script>
 
 <template>
-<section :class="{dark: $themeName === 'dark'}">
+<section class="dark">
   <div class="prompt" v-if="prompt">{{prompt}}</div>
   <div class="header" v-if="!noHeader">
     <slot name="header"/>
@@ -40,7 +40,7 @@ section {
   outline-offset: -5px;
   position: relative;
   overflow: hidden;
-  padding: 10px;
+  padding: 10px 0;
   font-family: 'Courier New', Courier, monospace;
   border: 1px solid rgba(149, 234, 167, 0.8);
 
