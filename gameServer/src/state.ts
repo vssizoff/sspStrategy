@@ -9,6 +9,7 @@ export default class State {
     turnNumber = -1
     units: Array<Unit> = [];
     effects: Array<Effect> = [];
+    currentPlayer = 0;
 
     constructor(public players: Array<Player>) {
         this.units = players.flatMap(player => player.units);
@@ -31,11 +32,13 @@ export default class State {
 
     async turn() {
         this.turnNumber++;
-        this.effectsEmit("turn", undefined, undefined);
         const addMana = rand.intBetween(2, 10);
         this.players.forEach(pl => pl.addMana(addMana));
+        this.currentPlayer = 0;
         for (let player of this.players) {
+            this.effectsEmit("turn", undefined, undefined);
             await player.turn(this);
+            this.currentPlayer++;
         }
         //console.log(inspect({
         //    turnNumber: this.turnNumber,

@@ -28,12 +28,13 @@ async function start() {
 
 const httpServer = createServer(async (req, res) => {
     if (req.url?.startsWith("/state/")) {
-        const id = parseInt(req.url.slice(7));
-        if (isNaN(id) || id < 0 || id > 1 || !state) {
+        const token = req.url.slice(7);
+        if (!players.map(pl => pl.token).includes(token) || !state) {
             res.statusCode = 400;
             res.end();
             return;
         }
+        const id = players.filter(pl => pl.token === token).map(pl => pl.id)[0] as number;
         if (req.method === "POST") {
             await players[id]?.onAction(req, state);
         }
