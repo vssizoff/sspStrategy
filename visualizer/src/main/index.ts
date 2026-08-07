@@ -1,10 +1,12 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import {localRun} from "./localRun";
+import {visualize} from "./visualize";
+import * as fs from "node:fs";
 
-function createRootWindow(): void {
+export function createRootWindow(): void {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
     width: 800,
@@ -15,7 +17,7 @@ function createRootWindow(): void {
     autoHideMenuBar: true,
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
+      preload: join(__dirname, '../preload/index.mjs'),
       sandbox: false
     }
   })
@@ -31,6 +33,19 @@ function createRootWindow(): void {
 
   mainWindow.webContents.ipc.handle("localRun", async () => {
     await localRun();
+    mainWindow.close();
+  });
+
+  mainWindow.webContents.ipc.handle("visualize", async () => {
+    const file = (await dialog.showOpenDialog(mainWindow, {
+      filters: [
+        {name: 'Game log', extensions: ["log"]},
+        {name: 'All files', extensions: ['*']}
+      ],
+      title: "Open game log file"
+    })).filePaths[0];
+    if (!file) return;
+    await visualize(JSON.parse(await fs.promises.readFile(file, {encoding: "utf8"})));
     mainWindow.close();
   });
 

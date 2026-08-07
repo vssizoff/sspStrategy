@@ -1,0 +1,5 @@
+{
+    "cmake.debugConfig": {
+        "args": ["ws://localhost:8888/player/0"]
+    }
+}

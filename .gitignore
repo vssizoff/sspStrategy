@@ -36,6 +36,10 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 
 *.lock
 cpp/build
+cpp-vscode/build
+cpp-vscode/CMakePresets.json
+cpp-vscode/out
+cpp-vscode/.vscode/tasks.json
 
 gameServer/node_modules
 gameServer/dist

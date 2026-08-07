@@ -17,4 +17,8 @@ html, body, #app {
   margin: 0;
   background: rgb(24, 24, 24);
 }
+
+* {
+  color: white;
+}
 </style>

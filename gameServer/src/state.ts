@@ -32,7 +32,7 @@ export default class State {
 
     async turn() {
         this.turnNumber++;
-        const addMana = rand.intBetween(2, 10);
+        const addMana = rand.intBetween(5, 15);
         this.players.forEach(pl => pl.addMana(addMana));
         this.currentPlayer = 0;
         for (let player of this.players) {
