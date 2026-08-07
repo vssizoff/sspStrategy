@@ -9,10 +9,12 @@ import {visualize} from "./visualize";
 import {createRootWindow} from "./index";
 import * as fs from "node:fs";
 import cryptoRandomString from 'crypto-random-string';
+import {inspect} from "node:util";
 
 async function startServer(webContents: WebContents) {
     let proc: ChildProcess | null = null;
     const app = new Backendium({port: 8889, logging: {replaceConsoleLog: false}});
+    let characters: Array<Array<string>> = [[], []];
     const gameLog: Array<unknown> = [];
 
     app.post("/connection-idle", {
@@ -66,8 +68,11 @@ async function startServer(webContents: WebContents) {
     });
 
     app.post("/player-ready/:player", {
-        paramsValidator: object({player: int()})
+        paramsValidator: object({player: int()}),
+        bodyValidator: array(string())
     }, async (request, response) => {
+        console.log(inspect(request.body));
+        characters[request.params.player] = request.body;
         webContents.send("player-ready", request.params.player);
         response.end();
     });
@@ -105,12 +110,12 @@ async function startServer(webContents: WebContents) {
         cwd: join(resolve(".."), "gameServer"),
         stdio: "inherit",
         env: {
-            CONNECTION_IDLE_TIME: "1000",
+            CONNECTION_IDLE_TIME: "0",
             OUTPUT: "http://localhost:8889"
         }
     });
 
-    return [proc, server, () => gameLog] as const;
+    return [proc, server, () => [{characters}, ...gameLog]] as const;
 }
 
 export async function localRun() {

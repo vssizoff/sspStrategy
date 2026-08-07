@@ -14,7 +14,7 @@ export interface OutputApi {
     actionIdle(player: number): void;
     actionBadRequest(action: unknown, player: number, message: string): void;
 
-    playerReady(player: number): void;
+    playerReady(player: number, characters: Array<string>): void;
     gameStarted(): void;
 
     logAction(state: State, action: ReturnType<typeof actionParser>, player: number): void;
@@ -53,7 +53,7 @@ export class CliOutputApi implements OutputApi {
         this.end((player + 1) % 2);
     }
 
-    playerReady(player: number): void {
+    playerReady(player: number, characters: Array<string>): void {
         console.log(`Player ${player} ready`);
     }
 
@@ -109,8 +109,8 @@ export class HttpOutputApi implements OutputApi {
         post(this.host + `/action-bad-request/${player}`).send({action, player, message}).ok(() => true).end();
     }
 
-    playerReady(player: number): void {
-        post(this.host + `/player-ready/${player}`).ok(() => true).end();
+    playerReady(player: number, characters: Array<string>): void {
+        post(this.host + `/player-ready/${player}`).send(characters).ok(() => true).end();
     }
 
     gameStarted(): void {

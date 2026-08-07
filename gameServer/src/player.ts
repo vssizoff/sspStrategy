@@ -59,7 +59,7 @@ export default class Player {
                       this.state?.effectsEmit(type, this.id, index, ...args);
                     });
                 });
-                outputApi.playerReady(id);
+                outputApi.playerReady(id, this.units.map(u => u.character.name));
             }
             catch (e) {
                 if (!(e instanceof ParsingError)) throw e;

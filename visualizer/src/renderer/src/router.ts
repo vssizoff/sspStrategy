@@ -12,6 +12,11 @@ export default createRouter({
             name: "localRun",
             path: "/local-run",
             component: () => import("@renderer/views/LocalRunView.vue"),
+        },
+        {
+            name: "visualize",
+            path: "/visualize",
+            component: () => import("@renderer/views/VisualizeView.vue"),
         }
     ]
 });
