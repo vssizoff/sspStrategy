@@ -1,5 +1,5 @@
 #include <iostream>
-#include "strategy.hpp"
+#include "lib/strategy.hpp"
 
 using std::cout, std::cerr;
 

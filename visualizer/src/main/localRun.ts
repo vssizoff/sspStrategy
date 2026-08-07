@@ -71,7 +71,6 @@ async function startServer(webContents: WebContents) {
         paramsValidator: object({player: int()}),
         bodyValidator: array(string())
     }, async (request, response) => {
-        console.log(inspect(request.body));
         characters[request.params.player] = request.body;
         webContents.send("player-ready", request.params.player);
         response.end();

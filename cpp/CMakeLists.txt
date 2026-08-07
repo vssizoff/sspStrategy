@@ -10,7 +10,3 @@ add_executable(strategyGamePlayer
     lib/strategy.cpp
     lib/easywsclient.cpp
 )
-
-target_include_directories(strategyGamePlayer PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/lib
-)
