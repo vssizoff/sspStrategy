@@ -4,25 +4,22 @@
 using std::cout, std::cerr;
 
 void onTurn(Strategy::State& state) {
-    Strategy::Unit& archer = state.me.units[0];
-    Strategy::Unit& knight = state.me.units[1];
-    Strategy::Unit& enemy1 = state.enemy.units[0];
-    Strategy::Unit& enemy2 = state.enemy.units[1];
     cerr << "Turn: " << state.turnNumber << '\n';
     bool moved = 0;
-    if (knight.frontLine == false && state.me.mana >= 7) {
-        state.move(knight.id);
+    if (state.me.units[1].frontLine == false && state.me.mana >= 7) {
+        state.move(state.me.units[1].id);
         moved = 1;
     }
-    while (state.me.mana >= 14 && knight.frontLine && (enemy1.frontLine && enemy2.frontLine)) state.action(knight.id, "SplashAttack");
-    while (state.me.mana >= 7 && knight.frontLine && (enemy1.frontLine || enemy2.frontLine)) state.action(knight.id, "SwordAttack");
+    while (state.me.mana >= 14 && state.me.units[1].frontLine && (state.enemy.units[0].frontLine && state.enemy.units[1].frontLine)) state.action(state.me.units[1].id, "SplashAttack");
+    //while (state.me.mana >= 7 && state.me.units[1].frontLine && (state.enemy.units[0].frontLine || state.enemy.units[1].frontLine)) state.action(state.me.units[1].id, "SwordAttack");
     if (!moved) {
-        state.move(knight.id);
+        state.move(state.me.units[1].id);
         moved = 1;
     }
-    while (state.me.mana >= 17 && (archer.frontLine || enemy1.frontLine || enemy2.frontLine)) {
-        if (archer.frontLine || enemy1.frontLine) state.action(archer.id, "Shoot", enemy1.id);
-        else state.action(archer.id, "Shoot", enemy2.id);
+    //cerr << archer->id << ' ' << state.me.units[0].id << '\n';
+    while (state.me.mana >= 17 && (state.me.units[0].frontLine || state.enemy.units[0].frontLine || state.enemy.units[1].frontLine)) {
+        if (state.me.units[0].frontLine || state.enemy.units[0].frontLine) state.action(state.me.units[0].id, "Shoot", state.enemy.units[0].id);
+        else state.action(state.me.units[0].id, "Shoot", state.enemy.units[1].id);
     }
 }
 

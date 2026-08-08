@@ -12,6 +12,9 @@ const props = defineProps({
   character: {
     type: String,
     required: true
+  },
+  action: {
+    type: String
   }
 });
 </script>
@@ -20,6 +23,7 @@ const props = defineProps({
   <div class="card">
     <span class="character">{{character}}</span>
     <span class="health">{{unit.health}}</span>
+    <span class="action" v-if="action">{{action}}</span>
   </div>
 </template>
 
@@ -51,6 +55,15 @@ const props = defineProps({
     justify-content: center;
     align-items: center;
     font-size: 60px;
+  }
+
+  .action {
+    position: absolute;
+    top: 50%;
+    text-align: center;
+    display: block;
+    width: 100%;
+    font-size: 40px;
   }
 }
 </style>

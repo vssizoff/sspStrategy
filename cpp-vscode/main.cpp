@@ -6,6 +6,15 @@ using std::cout, std::cerr;
 void onTurn(Strategy::State& state) {
     cerr << state.turnNumber << '\n';
     if (state.me.mana >= 15) state.action(state.me.units[1].id, "SplashAttack");
+    bool moved = false;
+    if (!moved && !state.me.units[0].frontLine) {
+        state.move(state.me.units[0].id);
+        moved = true;
+    }
+    if (!moved && !state.me.units[1].frontLine) {
+        state.move(state.me.units[1].id);
+        moved = true;
+    }
 }
 
 int main(int argc, char** argv) {

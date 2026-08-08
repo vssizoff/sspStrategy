@@ -34,6 +34,5 @@ export async function visualize(gameLog: Array<unknown>) {
         await mainWindow.loadFile(join(__dirname, '../renderer/index.html'), {hash: "visualize"})
     }
 
-    console.log(gameLog);
     mainWindow.webContents.send("game-log", gameLog);
 }

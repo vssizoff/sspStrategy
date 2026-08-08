@@ -17,7 +17,7 @@ const turnNumber = ref(0);
 
 function getUnit(player: number, unit: number) {
   const u = props.gameLog[turnNumber.value]?.state.players[player].units[unit]
-  return {actingUnit: props.gameLog[turnNumber.value].unit, health: u?.health as number, frontLine: u?.frontLine as boolean};
+  return {actingUnit: props.gameLog[turnNumber.value].unit, action: props.gameLog[turnNumber.value].action, health: u?.health as number, frontLine: u?.frontLine as boolean};
 }
 
 const state = computed(() => {
@@ -42,7 +42,12 @@ onMounted(() => {
   <main>
     <div v-for="(row, unitIndex) in state" class="row">
       <div v-for="(unit, index) in row" class="unit" :class="{rev: index, frontLine: unit.frontLine}">
-        <Card :unit="unit" :character="characters[index][unitIndex]" :class="{acting: unit.actingUnit == index * 2 + unitIndex}" class="card"/>
+        <Card
+            :unit="unit"
+            :character="characters[index][unitIndex]"
+            :class="{acting: unit.actingUnit == index * 2 + unitIndex}"
+            :action="unit.actingUnit == index * 2 + unitIndex ? unit.action : undefined"
+            class="card"/>
       </div>
     </div>
   </main>
@@ -68,6 +73,7 @@ main {
   width: 640px;
   height: 400px;
   display: flex;
+  transition: all ease-in-out 0.5s;
 }
 
 .rev {

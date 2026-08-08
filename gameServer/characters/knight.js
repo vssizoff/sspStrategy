@@ -16,9 +16,9 @@ export default {
             mana: 14,
             apply(state, unit) {
                 if (state.units[unit].frontLine) {
-                    for (target of state.units) if (state.isEnemy(state.units[unit].player.id, target)) {
-                        if (state.units[target].frontLine) {
-                          state.units[target].damage(4);
+                    for (let i = 0; i < 4; i++) if (state.isEnemy(state.units[unit].player.id, i)) {
+                        if (state.units[i].frontLine) {
+                            state.units[i].damage(4);
                         }
                     }
                 }
