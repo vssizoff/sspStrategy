@@ -1,4 +1,4 @@
-import {BrowserWindow, shell, WebContents, dialog} from "electron";
+import {BrowserWindow, dialog, shell, WebContents} from "electron";
 import {join, resolve} from "path";
 import {is} from "@electron-toolkit/utils";
 import icon from '../../resources/icon.png?asset'
@@ -9,7 +9,7 @@ import {visualize} from "./visualize";
 import {createRootWindow} from "./index";
 import * as fs from "node:fs";
 import cryptoRandomString from 'crypto-random-string';
-import {inspect} from "node:util";
+import {charactersPath, checkCoreUpdates, executablePath} from "./coreManager";
 
 async function startServer(webContents: WebContents) {
     let proc: ChildProcess | null = null;
@@ -105,12 +105,12 @@ async function startServer(webContents: WebContents) {
 
     const server = await app.startAsync();
 
-    proc = spawn(`bash`, ["-c", `/home/sizoff/.bun/bin/bun ${join(resolve(".."), "gameServer", "src", "main.ts")}`], {
-        cwd: join(resolve(".."), "gameServer"),
+    proc = spawn(executablePath, [], {
         stdio: "inherit",
         env: {
             CONNECTION_IDLE_TIME: "0",
-            OUTPUT: "http://localhost:8889"
+            OUTPUT: "http://localhost:8889",
+            CHARACTERS_DIR: charactersPath
         }
     });
 
@@ -118,6 +118,8 @@ async function startServer(webContents: WebContents) {
 }
 
 export async function localRun() {
+    await checkCoreUpdates();
+
     // Create the browser window.
     const mainWindow = new BrowserWindow({
         width: 1200,
@@ -182,8 +184,8 @@ export async function localRun() {
     // HMR for renderer base on electron-vite cli.
     // Load the remote URL for development or the local html file for production.
     if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-        mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'] + "#local-run")
+        await mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'] + "#local-run")
     } else {
-        mainWindow.loadFile(join(__dirname, '../renderer/index.html'), {hash: "local-run"})
+        await mainWindow.loadFile(join(__dirname, '../renderer/index.html'), {hash: "local-run"})
     }
 }

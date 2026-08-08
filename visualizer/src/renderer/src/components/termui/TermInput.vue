@@ -1,11 +1,8 @@
 <template>
-  <label class="terminal-wrapper" :class="{dark: $themeName === 'dark'}" v-click-outside="() => focus = false">
+  <label class="terminal-wrapper dark">
     <span class="bracket bracket-left"></span>
 
     <span class="terminal-content">
-      <ElTooltip content="Необязательное поле" :disabled="!optional" :popper-class="$style.popover" effect="light">
-        <span :class="{prompt: true, optional: optional}">{{prompt}}</span>
-      </ElTooltip>
       <input
           v-if="!int && !float"
           :type="password ? 'password' : 'text'"
@@ -14,7 +11,6 @@
           :placeholder="placeholder"
           @input="onInput"
           :disabled="disabled"
-          v-popover="op"
       />
       <input
           v-else
@@ -26,26 +22,7 @@
           inputmode="numeric"
           @input="onInput"
           :disabled="disabled"
-          v-popover="op"
       />
-
-      <ElPopover
-          ref="op"
-          virtual-triggering persistent
-          trigger="focus"
-          :visible="(!int && !float ? (min != undefined && (inputValue ?? '').length < min) || (max != undefined && (inputValue ?? '').length > max) || (props.pattern != undefined && !props.pattern.test(inputValue ?? ''))
-            : (min != undefined && Number(inputValue) < min) || (max != undefined && Number(inputValue) > max)) && focus"
-      >
-        <template v-if="!int && !float">
-          <div v-if="min != undefined && (inputValue ?? '').length < min">Длина строки должна быть не менее {{min}}</div>
-          <div v-if="max != undefined && (inputValue ?? '').length > max">Длина строки должна быть не более {{max}}</div>
-          <div v-if="props.pattern != undefined && !props.pattern.test(inputValue ?? '')">Строка не соответствует шаблону</div>
-        </template>
-        <template v-else>
-          <div v-if="min != undefined && Number(inputValue) < min">Значение должно быть не менее {{min}}</div>
-          <div v-if="max != undefined && Number(inputValue) > max">Значение должно быть не более {{max}}</div>
-        </template>
-      </ElPopover>
     </span>
 
     <span class="bracket bracket-right"></span>
@@ -54,7 +31,6 @@
 
 <script setup lang="ts">
 import {onMounted, ref} from "vue";
-import {ElPopover, ElPopoverDirective as vPopover, ClickOutside as vClickOutside, ElTooltip} from "element-plus";
 
 const op = ref();
 const focus = ref(false);

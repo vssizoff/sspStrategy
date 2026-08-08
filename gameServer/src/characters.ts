@@ -25,7 +25,9 @@ export interface Character {
 export let characters: Array<Character> = [];
 
 export async function loadCharacters() {
-    characters = await Promise.all((await fs.promises.readdir(path.resolve("./characters"))).map(async file => {
-        return (await import(path.join(path.resolve("./characters"), file))).default as Character;
+    const charactersDir = process.env.CHARACTERS_DIR ?? path.resolve("./characters");
+    console.log(charactersDir);
+    characters = await Promise.all((await fs.promises.readdir(charactersDir)).map(async file => {
+        return (await import(path.join(charactersDir, file))).default as Character;
     }));
 }

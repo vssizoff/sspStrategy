@@ -17,13 +17,13 @@ export default class Unit {
 
     damage(x: number) {
         let change = Math.min(this.health, x);
-        this.health = Math.min(0, this.health - x);
+        this.health = Math.max(0, this.health - x);
         this.emit("damage", change, x);
     }
 
     heal(x: number) {
         let change = Math.min(this.character.health - this.health, x);
-        this.health = Math.max(this.character.health, this.health + x);
+        this.health = Math.min(this.character.health, this.health + x);
         this.emit("heal", change, x);
     }
 
